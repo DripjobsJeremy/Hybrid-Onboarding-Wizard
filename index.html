@@ -606,19 +606,6 @@
                 <FormInput label="License Number" value={data.licenseNumber} onChange={e => setData({...data, licenseNumber: e.target.value})} placeholder="Optional" />
               </div>
             </div>
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Options</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div><span className="text-sm font-medium text-gray-700">Active Company</span><p className="text-sm text-gray-500">This company is active and operational</p></div>
-                  <Toggle enabled={true} onChange={() => {}} disabled={true} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div><span className="text-sm font-medium text-gray-700">Enable Google Calendar</span><p className="text-sm text-gray-500">Sync appointments with Google Calendar</p></div>
-                  <Toggle enabled={data.googleCalendar} onChange={val => setData({...data, googleCalendar: val})} />
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="flex justify-between">
@@ -694,12 +681,19 @@
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Profiles</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[{icon:"Facebook",color:"text-blue-600",label:"Facebook",key:"facebookUrl"},{icon:"Instagram",color:"text-pink-600",label:"Instagram",key:"instagramUrl"},{icon:"Linkedin",color:"text-blue-700",label:"LinkedIn",key:"linkedinUrl"},{icon:"Twitter",color:"text-sky-500",label:"Twitter",key:"twitterUrl"}].map(s => (
+                {[{icon:"Facebook",color:"text-blue-600",label:"Facebook",key:"facebookUrl",placeholder:"https://facebook.com/..."},{icon:"Instagram",color:"text-pink-600",label:"Instagram",key:"instagramUrl",placeholder:"https://instagram.com/..."},{icon:"Linkedin",color:"text-blue-700",label:"LinkedIn",key:"linkedinUrl",placeholder:"https://linkedin.com/..."}].map(s => (
                   <div key={s.key} className="space-y-1">
                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2"><Icon name={s.icon} size={16} className={s.color} /> {s.label} URL</label>
-                    <input type="text" value={data[s.key] || ""} onChange={e => setData({...data, [s.key]: e.target.value})} placeholder={`https://${s.label.toLowerCase()}.com/...`} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                    <input type="text" value={data[s.key] || ""} onChange={e => setData({...data, [s.key]: e.target.value})} placeholder={s.placeholder} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
                   </div>
                 ))}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    X URL
+                  </label>
+                  <input type="text" value={data.xUrl || ""} onChange={e => setData({...data, xUrl: e.target.value})} placeholder="https://x.com/..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                </div>
               </div>
             </div>
           </div>
@@ -950,6 +944,8 @@
         if (!lead.city) e.city = "Required";
         if (!lead.state) e.state = "Required";
         if (!lead.zipCode) e.zipCode = "Required";
+        if (!lead.email) e.email = "Required";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email)) e.email = "Enter a valid email address";
         setErrors(e);
         return Object.keys(e).length === 0;
       };
@@ -966,7 +962,7 @@
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormInput label="Phone" required value={lead.phone} onChange={e => updateLead({phone: e.target.value})} placeholder="(555) 555-5555" error={errors.phone} />
-              <FormInput label="Email" type="email" value={lead.email} onChange={e => updateLead({email: e.target.value})} placeholder="email@example.com" />
+              <FormInput label="Email" required type="email" value={lead.email} onChange={e => updateLead({email: e.target.value})} placeholder="email@example.com" error={errors.email} />
             </div>
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Address</h3>
@@ -1009,6 +1005,8 @@
       const [lineItems, setLineItems] = useState([]);
       const [showAddItemModal, setShowAddItemModal] = useState(false);
       const [selectedProduct, setSelectedProduct] = useState('');
+      const [editingItemIndex, setEditingItemIndex] = useState(null);
+      const [showEmailWarning, setShowEmailWarning] = useState(false);
 
       const products = data.products || [
         { name: "Exterior Paint", price: 3500, checked: true },
@@ -1021,7 +1019,18 @@
       const leadName = `${lead.firstName} ${lead.lastName}`;
       const proposalNumber = 1042857;
 
+      const isEmailValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
       const handleSend = () => {
+        // If option 2 (real customer) and email is invalid/missing, show warning
+        if (selectedOption === 2 && (!lead.email || !isEmailValid(lead.email))) {
+          setShowEmailWarning(true);
+          return;
+        }
+        doSend();
+      };
+
+      const doSend = () => {
         setSending(true);
         setTimeout(() => { setSending(false); setSent(true); setData({...data, proposalSent: true}); setTimeout(() => onNext(), 2000); }, 1000);
       };
@@ -1029,9 +1038,28 @@
       const handleAddLineItem = () => {
         if (selectedProduct) {
           const product = allProducts.find(p => p.name === selectedProduct);
-          if (product) setLineItems([...lineItems, product]);
+          if (product) {
+            if (editingItemIndex !== null) {
+              const updated = [...lineItems];
+              updated[editingItemIndex] = product;
+              setLineItems(updated);
+            } else {
+              setLineItems([...lineItems, product]);
+            }
+          }
         }
+        setEditingItemIndex(null);
         setShowAddItemModal(false);
+      };
+
+      const handleEditItem = (idx) => {
+        setEditingItemIndex(idx);
+        setSelectedProduct(lineItems[idx].name);
+        setShowAddItemModal(true);
+      };
+
+      const handleRemoveItem = (idx) => {
+        setLineItems(lineItems.filter((_, i) => i !== idx));
       };
 
       const lineItemsTotal = lineItems.reduce((sum, item) => sum + (item.descriptionOnly ? 0 : item.price), 0);
@@ -1127,9 +1155,13 @@
                   ) : (
                     <div className="space-y-2">
                       {lineItems.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0">
+                        <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 group">
                           <span className="text-gray-700">{item.name}</span>
-                          <span className="font-medium text-gray-900">${item.price.toLocaleString()}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-gray-900">${item.price.toLocaleString()}</span>
+                            <button onClick={() => handleEditItem(idx)} className="text-purple-600 hover:text-purple-800 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity" title="Edit"><Icon name="Pencil" size={14} /></button>
+                            <button onClick={() => handleRemoveItem(idx)} className="text-red-500 hover:text-red-700 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity" title="Remove"><Icon name="Trash2" size={14} /></button>
+                          </div>
                         </div>
                       ))}
                       <div className="flex justify-between items-center pt-2 font-bold">
@@ -1139,7 +1171,7 @@
                     </div>
                   )}
                 </div>
-                <button onClick={() => { setSelectedProduct(''); setShowAddItemModal(true); }} className="px-3 py-1.5 border border-purple-500 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-50">Add Item</button>
+                <button onClick={() => { setEditingItemIndex(null); setSelectedProduct(''); setShowAddItemModal(true); }} className="px-3 py-1.5 border border-purple-500 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-50">Add Item</button>
               </div>
 
               {/* Add Item Modal */}
@@ -1147,7 +1179,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                   <div className="bg-white rounded-xl shadow-xl max-w-lg w-full fade-in max-h-[90vh] overflow-y-auto">
                     <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                      <h2 className="text-lg font-semibold text-gray-900">Add Item</h2>
+                      <h2 className="text-lg font-semibold text-gray-900">{editingItemIndex !== null ? 'Edit Item' : 'Add Item'}</h2>
                       <button onClick={() => setShowAddItemModal(false)} className="text-gray-400 hover:text-gray-600"><Icon name="X" size={20} /></button>
                     </div>
                     <div className="p-4 space-y-4">
@@ -1193,6 +1225,35 @@
               <div className="p-4 border-t border-gray-200 flex justify-between">
                 <button onClick={() => setShowProposal(false)} className="text-gray-500 hover:text-gray-700 underline text-sm">Back to Options</button>
                 <button onClick={onNext} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Skip Proposal</button>
+              </div>
+            </div>
+          )}
+
+          {/* Invalid Email Warning Modal */}
+          {showEmailWarning && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full fade-in">
+                <div className="p-6 text-center">
+                  <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="AlertTriangle" size={32} className="text-amber-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">Invalid Email Address</h2>
+                  <p className="text-gray-600 mb-2">The email address for <strong>{leadName}</strong> appears to be missing or invalid.</p>
+                  <p className="text-sm text-gray-500 mb-1">
+                    {!lead.email ? 'No email address was provided.' : <span>The address "<strong>{lead.email}</strong>" doesn't appear to be valid.</span>}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-6">Your customer won't be able to receive this proposal without a valid email.</p>
+                  <div className="flex flex-col gap-3">
+                    <button onClick={() => { setShowEmailWarning(false); setShowProposal(false); }}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                      <Icon name="ArrowLeft" size={18} /> Go Back & Fix Email
+                    </button>
+                    <button onClick={() => { setShowEmailWarning(false); doSend(); }}
+                      className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                      Send Anyway
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1372,7 +1433,7 @@
         companyName: "", shortName: "", businessType: "Painting", timeZone: "EST",
         streetAddress: "", city: "", state: "", zipCode: "", phone: "", licenseNumber: "",
         googleCalendar: false, brandFinderUsed: false, logoFile: "", accentColor: "#7C3AED",
-        websiteUrl: "", reviewUrl: "", facebookUrl: "", instagramUrl: "", linkedinUrl: "", twitterUrl: "",
+        websiteUrl: "", reviewUrl: "", facebookUrl: "", instagramUrl: "", linkedinUrl: "", xUrl: "",
         products: null, addOns: { productionRates: false, jobiAI: false, jobCosting: false },
         teamMember: null, lead: null, proposalSent: false, scheduledOnboarding: null
       });
