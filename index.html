@@ -44,9 +44,24 @@
     .demo-controls {
       position: fixed; top: 0; left: 0; right: 0;
       background: #1F2937; color: white;
-      padding: 10px 16px; z-index: 2000;
+      z-index: 2000;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
+    .demo-controls-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; cursor: pointer;
+    }
+    .demo-controls-body { padding: 0 16px 10px; }
+    @media (max-width: 768px) {
+      .demo-controls-body { display: none; max-height: 0; overflow: hidden; transition: max-height 0.2s; }
+      .demo-controls-body.open { display: block; max-height: 500px; overflow-y: auto; }
+    }
+    @media (min-width: 769px) {
+      .demo-controls-toggle .toggle-chevron { display: none; }
+      .demo-controls-body { display: block; }
+    }
+    .demo-content-offset { padding-top: 36px; }
+    @media (min-width: 769px) { .demo-content-offset { padding-top: 56px; } }
     .demo-controls .btn {
       font-size: 11px; padding: 5px 10px; margin: 2px;
       border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);
@@ -1572,43 +1587,49 @@
       const isInScheduling = [STEPS.SCHEDULE_INTRO, STEPS.CALENDAR, STEPS.BOOKING_CONFIRMED, STEPS.SKIP_SCHEDULING].includes(currentStep);
 
       // Demo Controls
+      const [demoOpen, setDemoOpen] = useState(false);
       const DemoControls = () => (
         <div className="demo-controls">
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="text-xs text-gray-400 font-semibold mr-2">PROTOTYPE NAV:</span>
-            <span className="text-xs text-blue-400 font-semibold mr-1">Scheduling:</span>
-            {[
-              { step: STEPS.WELCOME, label: "Welcome" },
-              { step: STEPS.SCHEDULE_INTRO, label: "Video/CTA" },
-              { step: STEPS.CALENDAR, label: "Calendar" },
-              { step: STEPS.BOOKING_CONFIRMED, label: "Confirmed" },
-              { step: STEPS.SKIP_SCHEDULING, label: "Skip" },
-            ].map(s => (
-              <button key={s.step} className={`btn ${currentStep === s.step ? 'scheduling' : ''}`} onClick={() => goTo(s.step)}>{s.label}</button>
-            ))}
-            <span className="text-xs text-purple-400 font-semibold ml-2 mr-1">Setup:</span>
-            {[
-              { step: STEPS.COMPANY_INFO, label: "1. Company" },
-              { step: STEPS.BRAND_SETUP, label: "2. Brand" },
-              { step: STEPS.PRODUCTS, label: "3. Products" },
-              { step: STEPS.ADDONS, label: "4. Add-Ons" },
-              { step: STEPS.TEAM, label: "5. Team" },
-              { step: STEPS.LEAD, label: "6. Lead" },
-              { step: STEPS.PROPOSAL, label: "7. Proposal" },
-              { step: STEPS.COMPLETE, label: "Complete" },
-              { step: STEPS.DASHBOARD, label: "Dashboard" },
-            ].map(s => (
-              <button key={s.step} className={`btn ${currentStep === s.step ? 'setup' : ''}`} onClick={() => goTo(s.step)}>{s.label}</button>
-            ))}
+          <div className="demo-controls-toggle" onClick={() => setDemoOpen(!demoOpen)}>
+            <span className="text-xs text-gray-400 font-semibold">PROTOTYPE NAV</span>
+            <span className="toggle-chevron text-gray-400 text-xs">{demoOpen ? '▲ Close' : '▼ Open'}</span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">Clickable Prototype — Flow 2 (Scheduling) → Flow 1 (Account Setup) | Owner-only | Custom modals, not redirects</div>
+          <div className={`demo-controls-body ${demoOpen ? 'open' : ''}`}>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-xs text-blue-400 font-semibold mr-1">Scheduling:</span>
+              {[
+                { step: STEPS.WELCOME, label: "Welcome" },
+                { step: STEPS.SCHEDULE_INTRO, label: "Video/CTA" },
+                { step: STEPS.CALENDAR, label: "Calendar" },
+                { step: STEPS.BOOKING_CONFIRMED, label: "Confirmed" },
+                { step: STEPS.SKIP_SCHEDULING, label: "Skip" },
+              ].map(s => (
+                <button key={s.step} className={`btn ${currentStep === s.step ? 'scheduling' : ''}`} onClick={() => { goTo(s.step); setDemoOpen(false); }}>{s.label}</button>
+              ))}
+              <span className="text-xs text-purple-400 font-semibold ml-2 mr-1">Setup:</span>
+              {[
+                { step: STEPS.COMPANY_INFO, label: "1. Company" },
+                { step: STEPS.BRAND_SETUP, label: "2. Brand" },
+                { step: STEPS.PRODUCTS, label: "3. Products" },
+                { step: STEPS.ADDONS, label: "4. Add-Ons" },
+                { step: STEPS.TEAM, label: "5. Team" },
+                { step: STEPS.LEAD, label: "6. Lead" },
+                { step: STEPS.PROPOSAL, label: "7. Proposal" },
+                { step: STEPS.COMPLETE, label: "Complete" },
+                { step: STEPS.DASHBOARD, label: "Dashboard" },
+              ].map(s => (
+                <button key={s.step} className={`btn ${currentStep === s.step ? 'setup' : ''}`} onClick={() => { goTo(s.step); setDemoOpen(false); }}>{s.label}</button>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Clickable Prototype — Flow 2 (Scheduling) → Flow 1 (Account Setup) | Owner-only | Custom modals, not redirects</div>
+          </div>
         </div>
       );
 
       // Full-screen steps (Welcome)
       if (currentStep === STEPS.WELCOME) {
         return (
-          <div style={{ paddingTop: '56px' }}>
+          <div className="demo-content-offset">
             <DemoControls />
             <WelcomeScreen onStart={() => goTo(STEPS.SCHEDULE_INTRO)} />
           </div>
@@ -1685,7 +1706,7 @@
       };
 
       return (
-        <div className="min-h-screen bg-gray-50" style={{ paddingTop: '56px' }}>
+        <div className="min-h-screen bg-gray-50" className="demo-content-offset">
           <DemoControls />
 
           {/* Header */}
