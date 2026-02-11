@@ -573,6 +573,28 @@
 
     // Step 1: Company Information
     const Step1CompanyInfo = ({ data, setData, onNext, onBack, errors, setErrors }) => {
+      const [chargebeeLoaded, setChargebeeLoaded] = useState(false);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        // Simulate auto-populating from ChargeBee billing data
+        const timer = setTimeout(() => {
+          setData(prev => ({
+            ...prev,
+            companyName: prev.companyName || "Premier Painting Co.",
+            shortName: prev.shortName || "Premier",
+            phone: prev.phone || "(404) 555-1234",
+            streetAddress: prev.streetAddress || "123 Main Street",
+            city: prev.city || "Atlanta",
+            state: prev.state || "GA",
+            zipCode: prev.zipCode || "30301"
+          }));
+          setChargebeeLoaded(true);
+          setLoading(false);
+        }, 800);
+        return () => clearTimeout(timer);
+      }, []);
+
       const validate = () => {
         const e = {};
         if (!data.companyName) e.companyName = "Required";
@@ -592,6 +614,25 @@
             <h1 className="text-3xl font-bold text-gray-900">Company Information</h1>
             <p className="mt-2 text-base text-gray-600">Tell us about your business so we can customize your experience.</p>
           </div>
+
+          {loading && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3 fade-in">
+              <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full flex-shrink-0"></div>
+              <p className="text-sm text-blue-800">Pulling your info from ChargeBee billing...</p>
+            </div>
+          )}
+
+          {chargebeeLoaded && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3 fade-in">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon name="CheckCircle" size={18} className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-800">Auto-populated from ChargeBee</p>
+                <p className="text-xs text-green-600 mt-0.5">We pulled your company details from your billing account. Review and update anything that needs changing.</p>
+              </div>
+            </div>
+          )}
 
           <HelperTip>Fill in your company details below. Required fields are marked with a red asterisk (<span className="text-red-500">*</span>). This info will appear on your proposals and invoices.</HelperTip>
 
@@ -844,7 +885,7 @@
                 </div>
                 <h3 className="text-base font-semibold text-gray-900 mb-2">{card.title}</h3>
                 <p className="text-sm text-gray-600 mb-4 flex-grow">{card.description}</p>
-                <button onClick={() => { if (!card.disabled) { if (addOns[card.key]) setData({...data, addOns: {...addOns, [card.key]: false}}); else setData({...data, addOns: {...addOns, [card.key]: true}}); } }}
+                <button onClick={() => { if (!card.disabled) { if (addOns[card.key]) { setData({...data, addOns: {...addOns, [card.key]: false}}); } else { setConfirmModal(card); } } }}
                   disabled={card.disabled}
                   className={`w-full py-2 rounded-lg font-medium transition-colors ${card.disabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : addOns[card.key] ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
                   {card.disabled ? <span className="text-xs">{card.disabledReason}</span> : addOns[card.key] ? <span className="flex items-center justify-center gap-2"><Icon name="Check" size={16} /> Added</span> : 'Add'}
@@ -852,6 +893,74 @@
               </div>
             ))}
           </div>
+
+          {/* Add-On Confirmation Modal */}
+          {confirmModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full fade-in">
+                <div className="flex items-center justify-between p-5 border-b border-gray-200">
+                  <h2 className="text-lg font-bold text-gray-900">Add {confirmModal.title}?</h2>
+                  <button onClick={() => setConfirmModal(null)} className="text-gray-400 hover:text-gray-600"><Icon name="X" size={20} /></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Icon name={confirmModal.icon} size={24} className="text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{confirmModal.title}</h3>
+                      <span className="text-purple-600 font-bold">{confirmModal.price}</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">{confirmModal.description}</p>
+                  {confirmModal.key === 'productionRates' && (
+                    <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+                      <p className="text-sm text-purple-800 font-medium">Includes:</p>
+                      <ul className="text-sm text-purple-700 space-y-1">
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Accurate material & labor estimates</li>
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Pre-built painting rate tables</li>
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Custom rate configuration</li>
+                      </ul>
+                    </div>
+                  )}
+                  {confirmModal.key === 'jobiAI' && (
+                    <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+                      <p className="text-sm text-purple-800 font-medium">Includes:</p>
+                      <ul className="text-sm text-purple-700 space-y-1">
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> AI-powered deal analysis</li>
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Smart customer communications</li>
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Data-driven business insights</li>
+                      </ul>
+                    </div>
+                  )}
+                  {confirmModal.key === 'jobCosting' && (
+                    <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+                      <p className="text-sm text-purple-800 font-medium">Includes:</p>
+                      <ul className="text-sm text-purple-700 space-y-1">
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Labor & expense tracking</li>
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Job profitability calculator</li>
+                        <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-purple-500" /> Project budget monitoring</li>
+                      </ul>
+                    </div>
+                  )}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                    <Icon name="Info" size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800">This add-on will be added to your monthly subscription at <strong>{confirmModal.price}</strong>. You can remove it anytime from Settings.</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 p-5 border-t border-gray-200">
+                  <button onClick={() => { setData({...data, addOns: {...addOns, [confirmModal.key]: true}}); setConfirmModal(null); }}
+                    className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
+                    Add {confirmModal.title}
+                  </button>
+                  <button onClick={() => setConfirmModal(null)}
+                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-between items-center">
             <button onClick={onBack} className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">Back</button>
@@ -946,76 +1055,8 @@
       );
     };
 
-    // Step 6: Create First Lead
-    const Step6CreateLead = ({ data, setData, onNext, onBack }) => {
-      const [showOptional, setShowOptional] = useState(false);
-      const [errors, setErrors] = useState({});
-      const lead = data.lead || { firstName: "", lastName: "", phone: "", email: "", streetAddress: "", city: "", state: "", zipCode: "", leadSource: "Website", assignedSalesperson: "Unassigned" };
-      const updateLead = (updates) => setData({...data, lead: {...lead, ...updates}});
-
-      const validate = () => {
-        const e = {};
-        if (!lead.firstName) e.firstName = "Required";
-        if (!lead.lastName) e.lastName = "Required";
-        if (!lead.phone) e.phone = "Required";
-        if (!lead.streetAddress) e.streetAddress = "Required";
-        if (!lead.city) e.city = "Required";
-        if (!lead.state) e.state = "Required";
-        if (!lead.zipCode) e.zipCode = "Required";
-        if (!lead.email) e.email = "Required";
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email)) e.email = "Enter a valid email address";
-        setErrors(e);
-        return Object.keys(e).length === 0;
-      };
-
-      return (
-        <div className="space-y-6">
-          <div><h1 className="text-3xl font-bold text-gray-900">Create Your First Lead</h1><p className="mt-2 text-base text-gray-600">Add a potential customer to your pipeline.</p></div>
-          <HelperTip>Enter your customer's contact info. This is who will receive your first proposal. Use a real customer or a test one for practice!</HelperTip>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput label="First Name" required value={lead.firstName} onChange={e => updateLead({firstName: e.target.value})} placeholder="First name" error={errors.firstName} />
-              <FormInput label="Last Name" required value={lead.lastName} onChange={e => updateLead({lastName: e.target.value})} placeholder="Last name" error={errors.lastName} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput label="Phone" required value={lead.phone} onChange={e => updateLead({phone: formatPhone(e.target.value)})} placeholder="(555) 555-5555" error={errors.phone} />
-              <FormInput label="Email" required type="email" value={lead.email} onChange={e => updateLead({email: e.target.value})} placeholder="email@example.com" error={errors.email} />
-            </div>
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Address</h3>
-              <div className="space-y-4">
-                <FormInput label="Street Address" required value={lead.streetAddress} onChange={e => updateLead({streetAddress: e.target.value})} placeholder="Enter street address" error={errors.streetAddress} />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormInput label="City" required value={lead.city} onChange={e => updateLead({city: e.target.value})} placeholder="City" error={errors.city} />
-                  <FormInput label="State" required value={lead.state} onChange={e => updateLead({state: e.target.value})} placeholder="State" error={errors.state} />
-                  <FormInput label="Zip Code" required value={lead.zipCode} onChange={e => updateLead({zipCode: e.target.value})} placeholder="Zip" error={errors.zipCode} />
-                </div>
-              </div>
-            </div>
-            {!showOptional ? (
-              <button onClick={() => setShowOptional(true)} className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center gap-1"><Icon name="ChevronDown" size={16} /> Show Optional Fields</button>
-            ) : (
-              <div className="border-t border-gray-200 pt-6 space-y-4">
-                <button onClick={() => setShowOptional(false)} className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center gap-1"><Icon name="ChevronUp" size={16} /> Hide Optional Fields</button>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormSelect label="Lead Source" value={lead.leadSource} onChange={e => updateLead({leadSource: e.target.value})} options={[{value:"Website",label:"Website"},{value:"Referral",label:"Referral"},{value:"Facebook",label:"Facebook"},{value:"Google",label:"Google"},{value:"Other",label:"Other"}]} />
-                  <FormSelect label="Assigned Salesperson" value={lead.assignedSalesperson} onChange={e => updateLead({assignedSalesperson: e.target.value})} options={[{value:"Unassigned",label:"Unassigned"}, ...(data.teamMember?.added ? [{value:data.teamMember.email,label:`${data.teamMember.firstName} ${data.teamMember.lastName}`}] : [])]} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-between">
-            <button onClick={onBack} className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">Back</button>
-            <button onClick={() => { if (validate()) { setData({...data, lead: {...lead, created: true}}); onNext(); }}} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Create Lead</button>
-          </div>
-        </div>
-      );
-    };
-
-    // Step 7: Create & Send Proposal
-    const Step7Proposal = ({ data, setData, onNext, onBack }) => {
+    // Step 6: Create & Send Proposal (was Step 7)
+    const Step6Proposal = ({ data, setData, onNext, onBack }) => {
       const [selectedOption, setSelectedOption] = useState(1);
       const [showProposal, setShowProposal] = useState(false);
       const [sending, setSending] = useState(false);
@@ -1024,7 +1065,6 @@
       const [showAddItemModal, setShowAddItemModal] = useState(false);
       const [selectedProduct, setSelectedProduct] = useState('');
       const [editingItemIndex, setEditingItemIndex] = useState(null);
-      const [showEmailWarning, setShowEmailWarning] = useState(false);
 
       const products = data.products || [
         { name: "Exterior Paint", price: 3500, checked: true },
@@ -1033,18 +1073,12 @@
       ];
       const checkedProducts = products.filter(p => p.checked);
       const allProducts = [...checkedProducts, { name: "General Prep", price: 500, checked: true }, { name: "Interior Painting - Ceiling", price: 1200, checked: true }, { name: "Interior Painting - Doors", price: 800, checked: true }];
-      const lead = data.lead?.created ? data.lead : { firstName: "John", lastName: "Smith", phone: "(555) 123-4567", streetAddress: "789 Oak St", city: "Atlanta", state: "GA", zipCode: "30301", email: "john@example.com" };
+      // Auto-populate test contact for practice proposal
+      const lead = { firstName: "Test", lastName: "Contact", phone: "(555) 000-1234", streetAddress: "123 Test Street", city: "Atlanta", state: "GA", zipCode: "30301", email: "test@dripjobs.com" };
       const leadName = `${lead.firstName} ${lead.lastName}`;
       const proposalNumber = 1042857;
 
-      const isEmailValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
       const handleSend = () => {
-        // If option 2 (real customer) and email is invalid/missing, show warning
-        if (selectedOption === 2 && (!lead.email || !isEmailValid(lead.email))) {
-          setShowEmailWarning(true);
-          return;
-        }
         doSend();
       };
 
@@ -1099,9 +1133,8 @@
               <HelperTip>Final step! Choose an option to create your first proposal. We recommend a <strong>test proposal</strong> to explore how everything works.</HelperTip>
               <div className="space-y-4">
                 {[
-                  { id: 1, icon: "FlaskConical", title: "Practice with a test proposal", desc: "Create a test proposal with a sample contact" },
-                  { id: 2, icon: "Target", title: "I have a customer ready for an estimate", desc: "Create a real proposal for an actual project" },
-                  { id: 3, icon: "FastForward", title: "I'm not ready for this step yet", desc: "Skip to dashboard and explore on your own" }
+                  { id: 1, icon: "FlaskConical", title: "Practice with a test proposal", desc: "Create a test proposal using a sample contact (Test Contact)" },
+                  { id: 2, icon: "FastForward", title: "I'm not ready for this step yet", desc: "Skip to dashboard and explore on your own" }
                 ].map(option => (
                   <div key={option.id} onClick={() => setSelectedOption(option.id)}
                     className={`bg-white rounded-xl shadow-sm border-2 p-5 cursor-pointer transition-all ${selectedOption === option.id ? 'border-purple-500' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -1118,7 +1151,7 @@
                 ))}
                 <div className="flex justify-between pt-4">
                   <button onClick={onBack} className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">Back</button>
-                  {selectedOption === 3 ? (
+                  {selectedOption === 2 ? (
                     <button onClick={onNext} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Continue to Dashboard</button>
                   ) : (
                     <button onClick={() => setShowProposal(true)} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Continue</button>
@@ -1247,34 +1280,6 @@
             </div>
           )}
 
-          {/* Invalid Email Warning Modal */}
-          {showEmailWarning && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full fade-in">
-                <div className="p-6 text-center">
-                  <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="AlertTriangle" size={32} className="text-amber-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">Invalid Email Address</h2>
-                  <p className="text-gray-600 mb-2">The email address for <strong>{leadName}</strong> appears to be missing or invalid.</p>
-                  <p className="text-sm text-gray-500 mb-1">
-                    {!lead.email ? 'No email address was provided.' : <span>The address "<strong>{lead.email}</strong>" doesn't appear to be valid.</span>}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-6">Your customer won't be able to receive this proposal without a valid email.</p>
-                  <div className="flex flex-col gap-3">
-                    <button onClick={() => { setShowEmailWarning(false); setShowProposal(false); }}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                      <Icon name="ArrowLeft" size={18} /> Go Back & Fix Email
-                    </button>
-                    <button onClick={() => { setShowEmailWarning(false); doSend(); }}
-                      className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
-                      Send Anyway
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       );
     };
@@ -1296,12 +1301,12 @@
             <h3 className="font-semibold text-gray-900 mb-4 text-center">Setup Summary</h3>
             <div className="space-y-3">
               {[
+                { label: data.scheduledOnboarding ? "Schedule Onboarding Session" : "Schedule Onboarding Session (Skipped)", done: !!data.scheduledOnboarding },
                 { label: "Company Settings", done: true },
                 { label: "Brand Setup", done: true },
                 { label: "Products & Services", done: true },
                 { label: "Add-Ons", done: true },
                 { label: "Team Members", done: data.teamMember?.added || false },
-                { label: "First Lead Created", done: data.lead?.created || false },
                 { label: "First Proposal", done: data.proposalSent || false }
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -1309,7 +1314,7 @@
                     <Icon name={item.done ? "Check" : "Minus"} size={14} className="text-white" />
                   </div>
                   <span className={`text-sm ${item.done ? 'text-gray-900' : 'text-gray-400'}`}>{item.label}</span>
-                  {!item.done && <span className="text-xs text-gray-400">(Skipped)</span>}
+                  {!item.done && !item.label.includes('(Skipped)') && <span className="text-xs text-gray-400">(Skipped)</span>}
                 </div>
               ))}
             </div>
@@ -1346,7 +1351,7 @@
 
     // Mock Dashboard
     const MockDashboard = ({ data, onNavigateToStep }) => {
-      const lead = data.lead || { firstName: "John", lastName: "Smith" };
+      const lead = { firstName: "Test", lastName: "Contact" };
       const [dismissed, setDismissed] = useState(false);
 
       const pipelineColumns = [
@@ -1360,7 +1365,7 @@
         { name: 'Proposal(s) Rejected', color: 'bg-red-100', textColor: 'text-red-700', count: 0 }
       ];
 
-      // ── Onboarding checklist: 8 items (scheduling + 7 setup steps) ──
+      // ── Onboarding checklist: 7 items (scheduling + 6 setup steps) ──
       const checklistItems = [
         { label: "Schedule Onboarding Session", done: !!data.scheduledOnboarding, icon: "Calendar", step: "schedule_intro" },
         { label: "Company Settings", done: true, icon: "Building2", step: "company_info" },
@@ -1368,7 +1373,6 @@
         { label: "Products & Services", done: true, icon: "Package", step: "products" },
         { label: "Platform Add-Ons", done: true, icon: "Puzzle", step: "addons" },
         { label: "Team Members", done: !!data.teamMember?.added, icon: "Users", step: "team" },
-        { label: "Create First Lead", done: !!data.lead?.created, icon: "UserPlus", step: "lead" },
         { label: "Send First Proposal", done: !!data.proposalSent, icon: "FileText", step: "proposal" }
       ];
 
@@ -1549,7 +1553,6 @@
       PRODUCTS: 'products',
       ADDONS: 'addons',
       TEAM: 'team',
-      LEAD: 'lead',
       PROPOSAL: 'proposal',
       COMPLETE: 'complete',
       DASHBOARD: 'dashboard'
@@ -1557,7 +1560,7 @@
 
     const STEP_ORDER = [
       STEPS.WELCOME, STEPS.SCHEDULE_INTRO, STEPS.CALENDAR, STEPS.BOOKING_CONFIRMED, STEPS.SKIP_SCHEDULING,
-      STEPS.COMPANY_INFO, STEPS.BRAND_SETUP, STEPS.PRODUCTS, STEPS.ADDONS, STEPS.TEAM, STEPS.LEAD, STEPS.PROPOSAL, STEPS.COMPLETE, STEPS.DASHBOARD
+      STEPS.COMPANY_INFO, STEPS.BRAND_SETUP, STEPS.PRODUCTS, STEPS.ADDONS, STEPS.TEAM, STEPS.PROPOSAL, STEPS.COMPLETE, STEPS.DASHBOARD
     ];
 
     const DripJobsHybridOnboarding = () => {
@@ -1572,7 +1575,7 @@
         googleCalendar: false, brandFinderUsed: false, logoFile: "", accentColor: "#7C3AED",
         websiteUrl: "", reviewUrl: "", facebookUrl: "", instagramUrl: "", linkedinUrl: "", xUrl: "",
         products: null, addOns: { productionRates: false, jobiAI: false, jobCosting: false },
-        teamMember: null, lead: null, proposalSent: false, scheduledOnboarding: null
+        teamMember: null, proposalSent: false, scheduledOnboarding: null
       });
 
       const goTo = (step) => {
@@ -1584,8 +1587,8 @@
       };
 
       // Setup wizard step numbers (for progress bar)
-      const setupStepNames = ["Company Information", "Brand Setup", "Products & Services", "Platform Add-Ons", "Team Members", "Create Lead", "Send Proposal"];
-      const setupSteps = [STEPS.COMPANY_INFO, STEPS.BRAND_SETUP, STEPS.PRODUCTS, STEPS.ADDONS, STEPS.TEAM, STEPS.LEAD, STEPS.PROPOSAL];
+      const setupStepNames = ["Company Information", "Brand Setup", "Products & Services", "Platform Add-Ons", "Team Members", "Send Proposal"];
+      const setupSteps = [STEPS.COMPANY_INFO, STEPS.BRAND_SETUP, STEPS.PRODUCTS, STEPS.ADDONS, STEPS.TEAM, STEPS.PROPOSAL];
       const currentSetupStep = setupSteps.indexOf(currentStep) + 1;
       const isInSetupWizard = setupSteps.includes(currentStep);
       const isInScheduling = [STEPS.SCHEDULE_INTRO, STEPS.CALENDAR, STEPS.BOOKING_CONFIRMED, STEPS.SKIP_SCHEDULING].includes(currentStep);
@@ -1617,15 +1620,14 @@
                 { step: STEPS.PRODUCTS, label: "3. Products" },
                 { step: STEPS.ADDONS, label: "4. Add-Ons" },
                 { step: STEPS.TEAM, label: "5. Team" },
-                { step: STEPS.LEAD, label: "6. Lead" },
-                { step: STEPS.PROPOSAL, label: "7. Proposal" },
+                { step: STEPS.PROPOSAL, label: "6. Proposal" },
                 { step: STEPS.COMPLETE, label: "Complete" },
                 { step: STEPS.DASHBOARD, label: "Dashboard" },
               ].map(s => (
                 <button key={s.step} className={`btn ${currentStep === s.step ? 'setup' : ''}`} onClick={() => { goTo(s.step); setDemoOpen(false); }}>{s.label}</button>
               ))}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Clickable Prototype — Flow 2 (Scheduling) → Flow 1 (Account Setup) | Owner-only | Custom modals, not redirects</div>
+            <div className="text-xs text-gray-500 mt-1">Clickable Prototype — Flow 2 (Scheduling) → Flow 1 (Account Setup, 6 steps) | Owner-only | Custom modals, not redirects</div>
           </div>
         </div>
       );
@@ -1689,15 +1691,11 @@
             )}
             {currentStep === STEPS.TEAM && (
               <Step5TeamMembers data={formData} setData={setFormData}
-                onNext={() => goTo(STEPS.LEAD)} onBack={() => goTo(STEPS.ADDONS)} />
-            )}
-            {currentStep === STEPS.LEAD && (
-              <Step6CreateLead data={formData} setData={setFormData}
-                onNext={() => goTo(STEPS.PROPOSAL)} onBack={() => goTo(STEPS.TEAM)} />
+                onNext={() => goTo(STEPS.PROPOSAL)} onBack={() => goTo(STEPS.ADDONS)} />
             )}
             {currentStep === STEPS.PROPOSAL && (
-              <Step7Proposal data={formData} setData={setFormData}
-                onNext={() => goTo(STEPS.COMPLETE)} onBack={() => goTo(STEPS.LEAD)} />
+              <Step6Proposal data={formData} setData={setFormData}
+                onNext={() => goTo(STEPS.COMPLETE)} onBack={() => goTo(STEPS.TEAM)} />
             )}
             {currentStep === STEPS.COMPLETE && (
               <CompletionScreen data={formData} onViewDashboard={() => goTo(STEPS.DASHBOARD)} />
@@ -1732,7 +1730,7 @@
           {isInScheduling && (
             <ProgressBar
               currentStep={[STEPS.SCHEDULE_INTRO, STEPS.CALENDAR, STEPS.BOOKING_CONFIRMED, STEPS.SKIP_SCHEDULING].indexOf(currentStep) + 1}
-              totalSteps={9}
+              totalSteps={8}
               stepNames={["Schedule Onboarding", "Pick Date & Time", "Confirmation", "Skipped"]}
               onBack={() => {
                 if (currentStep === STEPS.CALENDAR) goTo(STEPS.SCHEDULE_INTRO);
@@ -1744,7 +1742,7 @@
           {isInSetupWizard && (
             <ProgressBar
               currentStep={currentSetupStep}
-              totalSteps={7}
+              totalSteps={6}
               stepNames={setupStepNames}
               onBack={() => {
                 const idx = setupSteps.indexOf(currentStep);
