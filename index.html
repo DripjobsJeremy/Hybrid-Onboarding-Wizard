@@ -1098,10 +1098,11 @@
     // Step 5: Platform Add-Ons (Skippable)
     const Step5AddOns = ({ data, setData, onNext, onBack }) => {
       const [confirmModal, setConfirmModal] = useState(null);
+      const [showSmsModal, setShowSmsModal] = useState(false);
       const addOns = data.addOns || { productionRates: false, jobiAI: false, jobCosting: false, textMessaging: false };
 
       const addOnCards = [
-        { key: "textMessaging", icon: "MessageSquare", title: "Text Messaging", price: "$29/m", description: "Send appointment reminders and follow-ups directly via SMS.", disabled: true, disabledReason: "Complete setup first" },
+        { key: "textMessaging", icon: "MessageSquare", title: "Text Messaging", price: "$25/m", description: "Send appointment reminders and follow-ups directly via SMS.", disabled: false, isSms: true },
         { key: "productionRates", icon: "BarChart3", title: "Production Rates", price: "$99/m", description: "Accurately estimate material cost & materials for painting projects.", disabled: false },
         { key: "jobiAI", icon: "Bot", title: "Jobi AI", price: "$39/m", description: "AI-powered deal analysis, customer communications, and data-driven insights.", disabled: false },
         { key: "jobCosting", icon: "DollarSign", title: "Job Costing", price: "$49/m", description: "Monitor labor and project expenses, calculate job profitability.", disabled: false }
@@ -1111,13 +1112,6 @@
         <div className="space-y-6">
           <div><h1 className="text-3xl font-bold text-gray-900">Platform Add-Ons</h1><p className="mt-2 text-base text-gray-600">Optional add-ons to enhance your experience. You can enable these later from Settings.</p></div>
           <HelperTip>These are <strong>optional</strong>. Click <strong>Add</strong> on any you'd like, or skip this step entirely. You can always add them later.</HelperTip>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><Icon name="MessageSquare" size={20} className="text-blue-600" /></div>
-              <div><h3 className="font-semibold text-gray-900">Text Messaging</h3><p className="text-sm text-gray-600 mt-1">Our most powerful add-on for customer communication. We recommend enabling it after setup is complete.</p></div>
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {addOnCards.map(card => (
@@ -1130,7 +1124,7 @@
                 </div>
                 <h3 className="text-base font-semibold text-gray-900 mb-2">{card.title}</h3>
                 <p className="text-sm text-gray-600 mb-4 flex-grow">{card.description}</p>
-                <button onClick={() => { if (!card.disabled) { if (addOns[card.key]) { setData({...data, addOns: {...addOns, [card.key]: false}}); } else { setConfirmModal(card); } } }}
+                <button onClick={() => { if (!card.disabled) { if (addOns[card.key]) { setData({...data, addOns: {...addOns, [card.key]: false}}); } else if (card.isSms) { setShowSmsModal(true); } else { setConfirmModal(card); } } }}
                   disabled={card.disabled}
                   className={`w-full py-2 rounded-lg font-medium transition-colors ${card.disabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : addOns[card.key] ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
                   {card.disabled ? <span className="text-xs">{card.disabledReason}</span> : addOns[card.key] ? <span className="flex items-center justify-center gap-2"><Icon name="Check" size={16} /> Added</span> : 'Add'}
@@ -1201,6 +1195,60 @@
                   <button onClick={() => setConfirmModal(null)}
                     className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                     Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add SMS Modal */}
+          {showSmsModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full fade-in max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                  <h2 className="text-lg font-bold text-gray-900">Add SMS</h2>
+                  <button onClick={() => setShowSmsModal(false)} className="text-gray-400 hover:text-gray-600"><Icon name="X" size={20} /></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-2">Unlock SMS Automation for Just $25/Month!</h3>
+                    <p className="text-sm text-gray-600">Take your DripJobs account to the next level with the <strong>SMS Automation Add-On</strong>. For only <strong>$25/month</strong>, you'll get a dedicated VOIP phone number and <strong>unlimited texting</strong>, making communication with your customers faster and easier.</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 mb-2">Here's What You Get:</p>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2"><span className="text-gray-400 mt-1">•</span><span><strong>Unlimited Texting:</strong> Send as many texts as needed to keep customers informed — whether it's appointment reminders, job updates, or follow-ups.</span></li>
+                      <li className="flex items-start gap-2"><span className="text-gray-400 mt-1">•</span><span><strong>VOIP Phone Number:</strong> Get your own business number for text communication, keeping everything organized and professional.</span></li>
+                      <li className="flex items-start gap-2"><span className="text-gray-400 mt-1">•</span><span><strong>Send Documents via SMS:</strong> Easily send proposals, invoices, work orders, and change orders through text for instant customer access.</span></li>
+                      <li className="flex items-start gap-2"><span className="text-gray-400 mt-1">•</span><span><strong>Automated Reminders:</strong> Set up automated text reminders to ensure your customers stay on track without any extra effort from you.</span></li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-700"><strong>Why Add SMS?</strong> Customers respond faster to texts than emails, so you can keep your projects running smoothly with quick, automated communication.</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-700"><strong>Simple Billing:</strong> The SMS Add-On will be billed after your trial ends, or immediately and prorated if you're already past the trial period.</p>
+                  </div>
+
+                  <p className="text-sm text-gray-700">For just $25/month, simplify your customer communication and boost engagement with SMS automation today!</p>
+
+                  {/* Demo-only helper */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                    <Icon name="Info" size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800"><strong>Demo Note:</strong> In the live app, clicking Continue would begin the <strong>Twilio A2P 10DLC registration process</strong> — the user would complete a business verification form to provision their SMS phone number.</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 p-5 border-t border-gray-200">
+                  <button onClick={() => { setData({...data, addOns: {...addOns, textMessaging: true}}); setShowSmsModal(false); }}
+                    className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
+                    Continue
+                  </button>
+                  <button onClick={() => setShowSmsModal(false)}
+                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                    Close
                   </button>
                 </div>
               </div>
@@ -1530,8 +1578,9 @@
     };
 
     // Completion Screen
-    const CompletionScreen = ({ data, onViewDashboard }) => {
+    const CompletionScreen = ({ data, onViewDashboard, onNavigateToStep }) => {
       const [showConfetti, setShowConfetti] = useState(true);
+      const [emailSent, setEmailSent] = useState(false);
       useEffect(() => { const t = setTimeout(() => setShowConfetti(false), 3500); return () => clearTimeout(t); }, []);
 
       return (
@@ -1570,8 +1619,16 @@
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 max-w-md w-full mb-6">
             <h3 className="font-semibold text-purple-900 mb-3">Recommended Next Steps</h3>
             <div className="space-y-2 text-left">
-              {["Set up Production Rates for accurate estimating", "Enable Text Messaging for customer communication", "Explore Jobi AI for deal intelligence"].map((item, i) => (
-                <div key={i} className="flex items-center gap-2"><Icon name="ArrowRight" size={14} className="text-purple-600" /><span className="text-sm text-purple-800">{item}</span></div>
+              {[
+                { text: "Set up Production Rates for accurate estimating", step: "addons" },
+                { text: "Enable Text Messaging for customer communication", step: "addons" },
+                { text: "Explore Jobi AI for deal intelligence", step: "addons" }
+              ].map((item, i) => (
+                <div key={i} onClick={() => onNavigateToStep && onNavigateToStep(item.step)}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-purple-100 rounded-lg px-2 py-1 -mx-2 transition-colors group">
+                  <Icon name="ArrowRight" size={14} className="text-purple-600" />
+                  <span className="text-sm text-purple-800 group-hover:text-purple-900">{item.text}</span>
+                </div>
               ))}
             </div>
           </div>
@@ -1584,6 +1641,37 @@
               </p>
             </div>
           )}
+
+          {/* Email Summary */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 max-w-md w-full mb-6">
+            {!emailSent ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon name="Mail" size={20} className="text-purple-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900">Save this for later?</p>
+                    <p className="text-xs text-gray-500">Email yourself a summary of your setup & next steps.</p>
+                  </div>
+                </div>
+                <button onClick={() => setEmailSent(true)}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2">
+                  <Icon name="Send" size={14} /> Email Me
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 fade-in">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icon name="CheckCircle" size={20} className="text-green-600" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-green-800">Summary sent!</p>
+                  <p className="text-xs text-gray-500">Check your inbox for your setup summary and recommended next steps.</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <button onClick={onViewDashboard} className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition-colors">View My Dashboard</button>
@@ -1959,7 +2047,8 @@
                 onBack={() => resumeMode ? goTo(STEPS.DASHBOARD) : goTo(STEPS.TEAM)} />
             )}
             {currentStep === STEPS.COMPLETE && (
-              <CompletionScreen data={formData} onViewDashboard={() => goTo(STEPS.DASHBOARD)} />
+              <CompletionScreen data={formData} onViewDashboard={() => goTo(STEPS.DASHBOARD)}
+                onNavigateToStep={(step) => { setResumeMode(true); goTo(step); }} />
             )}
             {currentStep === STEPS.DASHBOARD && (
               <MockDashboard data={formData} onNavigateToStep={(step) => { setResumeMode(true); goTo(step); }} />
