@@ -769,10 +769,15 @@
 
     // Step 3: Connect Google Calendar
     const Step3GoogleCalendar = ({ data, setData, onNext, onBack }) => {
-      const [calScreen, setCalScreen] = useState('connect'); // 'connect' | 'choose' | 'success'
+      const [calScreen, setCalScreen] = useState('connect'); // 'connect' | 'chooseAccount' | 'allowAccess' | 'chooseCalendar' | 'success'
       const companyEmail = data.companyName
         ? `${data.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`
         : 'jeremy@dripjobs.com';
+
+      // Google G logo SVG reusable
+      const GoogleGLogo = ({ size = 18 }) => (
+        <svg width={size} height={size} viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      );
 
       return (
         <div className="space-y-6">
@@ -783,7 +788,7 @@
 
           <HelperTip>Connecting Google Calendar lets DripJobs automatically sync appointments assigned to you. You can always set this up later from your <strong>User Profile</strong>.</HelperTip>
 
-          {/* Screen 1: Connect */}
+          {/* Screen 1: Connect — Status: Not Connected */}
           {calScreen === 'connect' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 fade-in">
               <div className="flex items-center justify-between">
@@ -794,17 +799,145 @@
                     <p className="text-sm text-red-500">Status: <span className="font-medium">Not Connected</span></p>
                   </div>
                 </div>
-                <button onClick={() => setCalScreen('choose')}
+                <button onClick={() => setCalScreen('chooseAccount')}
                   className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
-                  <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  <GoogleGLogo size={18} />
                   <span className="text-sm font-medium text-gray-700">Sign in with Google</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Screen 2: Choose Calendar */}
-          {calScreen === 'choose' && (
+          {/* Screen 2: Google "Choose an account" */}
+          {calScreen === 'chooseAccount' && (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 max-w-md mx-auto overflow-hidden fade-in">
+              {/* Google header bar */}
+              <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 flex items-center gap-2">
+                <GoogleGLogo size={20} />
+                <span className="text-sm font-medium text-gray-700">Sign in with Google</span>
+              </div>
+
+              <div className="px-8 py-8">
+                {/* DripJobs icon */}
+                <div className="flex justify-start mb-6">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#4285F4" strokeWidth="2"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="#4285F4" strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="12" r="11" stroke="#4285F4" strokeWidth="1.5" strokeDasharray="3 3"/></svg>
+                  </div>
+                </div>
+
+                <h2 className="text-2xl font-normal text-gray-900 mb-1">Choose an account</h2>
+                <p className="text-base text-gray-600 mb-6">to continue to <span className="text-blue-600 font-medium">DripJobs</span></p>
+
+                {/* Helper tip for prototype */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-5">
+                  <p className="text-xs text-blue-700 flex items-center gap-2">
+                    <Icon name="MousePointerClick" size={14} className="text-blue-500 flex-shrink-0" />
+                    Click on the email address below to continue.
+                  </p>
+                </div>
+
+                {/* Account option */}
+                <div onClick={() => setCalScreen('allowAccess')}
+                  className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-gray-200 -mx-2">
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold text-sm">{companyEmail.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{data.companyName || 'Premier Painting Co.'}</p>
+                    <p className="text-sm text-gray-500">{companyEmail}</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 my-4"></div>
+
+                <p className="text-xs text-gray-500">Before using this app, you can review DripJobs's <span className="text-blue-600 cursor-pointer">privacy policy</span> and <span className="text-blue-600 cursor-pointer">terms of service</span>.</p>
+              </div>
+
+              {/* Google footer */}
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">English (United States)</span>
+                  <Icon name="ChevronDown" size={12} className="text-gray-400" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-500">Help</span>
+                  <span className="text-xs text-gray-500">Privacy</span>
+                  <span className="text-xs text-gray-500">Terms</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Screen 3: Google "Grant access" */}
+          {calScreen === 'allowAccess' && (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 max-w-md mx-auto overflow-hidden fade-in">
+              {/* Google header bar */}
+              <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 flex items-center gap-2">
+                <GoogleGLogo size={20} />
+                <span className="text-sm font-medium text-gray-700">Sign in with Google</span>
+              </div>
+
+              <div className="px-8 py-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold text-sm">{companyEmail.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900">{companyEmail}</p>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-normal text-gray-900 mb-1"><span className="font-semibold">DripJobs</span> wants to access your Google Account</h2>
+                <p className="text-sm text-gray-500 mb-6">This will allow <strong>DripJobs</strong> to:</p>
+
+                <div className="space-y-4 mb-6">
+                  {[
+                    { icon: "Calendar", text: "See, edit, share, and permanently delete all the calendars you can access using Google Calendar" },
+                    { icon: "Eye", text: "View your email address" },
+                    { icon: "User", text: "See your personal info, including any personal info you've made publicly available" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Icon name={item.icon} size={16} className="text-blue-600" />
+                      </div>
+                      <p className="text-sm text-gray-700">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                  <p className="text-xs text-amber-800">Make sure you trust DripJobs. You may be sharing sensitive info with this site or app. You can always remove access in your <span className="text-blue-600">Google Account</span>.</p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setCalScreen('chooseAccount')}
+                    className="px-5 py-2.5 text-blue-600 font-medium text-sm rounded-full hover:bg-blue-50 transition-colors">
+                    Cancel
+                  </button>
+                  <button onClick={() => setCalScreen('chooseCalendar')}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-full transition-colors">
+                    Allow
+                  </button>
+                </div>
+              </div>
+
+              {/* Google footer */}
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">English (United States)</span>
+                  <Icon name="ChevronDown" size={12} className="text-gray-400" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-500">Help</span>
+                  <span className="text-xs text-gray-500">Privacy</span>
+                  <span className="text-xs text-gray-500">Terms</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Screen 4: Choose Calendar to Link */}
+          {calScreen === 'chooseCalendar' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in">
               <div className="bg-purple-50 border-b border-purple-200 px-6 py-4 text-center">
                 <h2 className="text-xl font-semibold text-gray-900">Please choose a calendar to link to DripJobs</h2>
@@ -855,7 +988,7 @@
             </div>
           )}
 
-          {/* Screen 3: Success */}
+          {/* Screen 5: Success */}
           {calScreen === 'success' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center fade-in">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 checkmark-animate">
