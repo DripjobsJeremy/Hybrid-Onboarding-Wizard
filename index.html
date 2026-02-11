@@ -283,7 +283,7 @@
                 {[
                   "Set up your company profile & branding",
                   "Add your products & services",
-                  "Create your first lead & proposal"
+                  "Create your first proposal"
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 mb-2">
                     <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1430,32 +1430,19 @@
                   </div>
                 </div>
 
-                {/* Checklist */}
+                {/* Checklist — only show remaining (incomplete) items */}
                 <div className="px-5 pb-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {checklistItems.map((item, i) => (
+                    {incompleteItems.map((item, i) => (
                       <div key={i}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                          item.done
-                            ? 'bg-white/50'
-                            : 'bg-white border border-gray-200 shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md'
-                        }`}
-                        onClick={() => { if (!item.done && onNavigateToStep) onNavigateToStep(item.step); }}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all bg-white border border-gray-200 shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md"
+                        onClick={() => { if (onNavigateToStep) onNavigateToStep(item.step); }}
                       >
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          item.done ? 'bg-green-500' : 'bg-gray-200'
-                        }`}>
-                          {item.done
-                            ? <Icon name="Check" size={14} className="text-white" />
-                            : <Icon name={item.icon} size={14} className="text-gray-500" />
-                          }
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-200">
+                          <Icon name={item.icon} size={14} className="text-gray-500" />
                         </div>
-                        <span className={`text-sm ${item.done ? 'text-gray-500 line-through' : 'text-gray-900 font-medium'}`}>
-                          {item.label}
-                        </span>
-                        {!item.done && (
-                          <Icon name="ChevronRight" size={14} className="text-gray-400 ml-auto" />
-                        )}
+                        <span className="text-sm text-gray-900 font-medium">{item.label}</span>
+                        <Icon name="ChevronRight" size={14} className="text-gray-400 ml-auto" />
                       </div>
                     ))}
                   </div>
@@ -1586,6 +1573,23 @@
         setCurrentStep(step);
       };
 
+      // ── Resume Mode: when returning from dashboard to complete skipped steps ──
+      const [resumeMode, setResumeMode] = useState(false);
+
+      // Given a step the user just completed/skipped past, find the next incomplete step
+      const getNextIncompleteStep = (movingPastStep) => {
+        const skippableSteps = [
+          { step: STEPS.SCHEDULE_INTRO, done: movingPastStep === STEPS.SCHEDULE_INTRO || !!formData.scheduledOnboarding },
+          { step: STEPS.TEAM, done: movingPastStep === STEPS.TEAM || !!formData.teamMember?.added },
+          { step: STEPS.PROPOSAL, done: movingPastStep === STEPS.PROPOSAL || !!formData.proposalSent }
+        ];
+        const afterIdx = skippableSteps.findIndex(s => s.step === movingPastStep);
+        for (let i = afterIdx + 1; i < skippableSteps.length; i++) {
+          if (!skippableSteps[i].done) return skippableSteps[i].step;
+        }
+        return STEPS.DASHBOARD;
+      };
+
       // Setup wizard step numbers (for progress bar)
       const setupStepNames = ["Company Information", "Brand Setup", "Products & Services", "Platform Add-Ons", "Team Members", "Send Proposal"];
       const setupSteps = [STEPS.COMPANY_INFO, STEPS.BRAND_SETUP, STEPS.PRODUCTS, STEPS.ADDONS, STEPS.TEAM, STEPS.PROPOSAL];
@@ -1662,12 +1666,12 @@
             {currentStep === STEPS.BOOKING_CONFIRMED && (
               <BookingConfirmationScreen
                 booking={booking}
-                onContinue={() => goTo(STEPS.COMPANY_INFO)}
+                onContinue={() => resumeMode ? goTo(getNextIncompleteStep(STEPS.SCHEDULE_INTRO)) : goTo(STEPS.COMPANY_INFO)}
               />
             )}
             {currentStep === STEPS.SKIP_SCHEDULING && (
               <SkipSchedulingScreen
-                onContinue={() => goTo(STEPS.COMPANY_INFO)}
+                onContinue={() => resumeMode ? goTo(getNextIncompleteStep(STEPS.SCHEDULE_INTRO)) : goTo(STEPS.COMPANY_INFO)}
                 onGoBack={() => goTo(STEPS.SCHEDULE_INTRO)}
               />
             )}
@@ -1691,17 +1695,19 @@
             )}
             {currentStep === STEPS.TEAM && (
               <Step5TeamMembers data={formData} setData={setFormData}
-                onNext={() => goTo(STEPS.PROPOSAL)} onBack={() => goTo(STEPS.ADDONS)} />
+                onNext={() => resumeMode ? goTo(getNextIncompleteStep(STEPS.TEAM)) : goTo(STEPS.PROPOSAL)}
+                onBack={() => resumeMode ? goTo(STEPS.DASHBOARD) : goTo(STEPS.ADDONS)} />
             )}
             {currentStep === STEPS.PROPOSAL && (
               <Step6Proposal data={formData} setData={setFormData}
-                onNext={() => goTo(STEPS.COMPLETE)} onBack={() => goTo(STEPS.TEAM)} />
+                onNext={() => resumeMode ? goTo(STEPS.DASHBOARD) : goTo(STEPS.COMPLETE)}
+                onBack={() => resumeMode ? goTo(STEPS.DASHBOARD) : goTo(STEPS.TEAM)} />
             )}
             {currentStep === STEPS.COMPLETE && (
               <CompletionScreen data={formData} onViewDashboard={() => goTo(STEPS.DASHBOARD)} />
             )}
             {currentStep === STEPS.DASHBOARD && (
-              <MockDashboard data={formData} onNavigateToStep={(step) => goTo(step)} />
+              <MockDashboard data={formData} onNavigateToStep={(step) => { setResumeMode(true); goTo(step); }} />
             )}
           </div>
         );
