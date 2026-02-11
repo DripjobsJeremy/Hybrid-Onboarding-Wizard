@@ -1102,7 +1102,7 @@
       const addOns = data.addOns || { productionRates: false, jobiAI: false, jobCosting: false, textMessaging: false };
 
       const addOnCards = [
-        { key: "textMessaging", icon: "MessageSquare", title: "Text Messaging", price: "$25/m", description: "Send appointment reminders and follow-ups directly via SMS.", disabled: false, isSms: true },
+        { key: "textMessaging", icon: "MessageSquare", title: "Text Messaging", price: "$25/m", description: "Send appointment reminders and follow-ups directly via SMS.", disabled: !data.smsUnlocked, disabledReason: "Complete setup first", isSms: true },
         { key: "productionRates", icon: "BarChart3", title: "Production Rates", price: "$99/m", description: "Accurately estimate material cost & materials for painting projects.", disabled: false },
         { key: "jobiAI", icon: "Bot", title: "Jobi AI", price: "$39/m", description: "AI-powered deal analysis, customer communications, and data-driven insights.", disabled: false },
         { key: "jobCosting", icon: "DollarSign", title: "Job Costing", price: "$49/m", description: "Monitor labor and project expenses, calculate job profitability.", disabled: false }
@@ -1578,7 +1578,7 @@
     };
 
     // Completion Screen
-    const CompletionScreen = ({ data, onViewDashboard, onNavigateToStep }) => {
+    const CompletionScreen = ({ data, setData, onViewDashboard, onNavigateToStep }) => {
       const [showConfetti, setShowConfetti] = useState(true);
       const [emailSent, setEmailSent] = useState(false);
       useEffect(() => { const t = setTimeout(() => setShowConfetti(false), 3500); return () => clearTimeout(t); }, []);
@@ -1621,10 +1621,10 @@
             <div className="space-y-2 text-left">
               {[
                 { text: "Set up Production Rates for accurate estimating", step: "addons" },
-                { text: "Enable Text Messaging for customer communication", step: "addons" },
+                { text: "Enable Text Messaging for customer communication", step: "addons", unlockSms: true },
                 { text: "Explore Jobi AI for deal intelligence", step: "addons" }
               ].map((item, i) => (
-                <div key={i} onClick={() => onNavigateToStep && onNavigateToStep(item.step)}
+                <div key={i} onClick={() => { if (item.unlockSms && setData) setData({...data, smsUnlocked: true}); onNavigateToStep && onNavigateToStep(item.step); }}
                   className="flex items-center gap-2 cursor-pointer hover:bg-purple-100 rounded-lg px-2 py-1 -mx-2 transition-colors group">
                   <Icon name="ArrowRight" size={14} className="text-purple-600" />
                   <span className="text-sm text-purple-800 group-hover:text-purple-900">{item.text}</span>
@@ -1898,7 +1898,7 @@
         googleCalendar: false, brandFinderUsed: false, logoFile: "", accentColor: "#7C3AED",
         websiteUrl: "", reviewUrl: "", facebookUrl: "", instagramUrl: "", linkedinUrl: "", xUrl: "",
         products: null, addOns: { productionRates: false, jobiAI: false, jobCosting: false },
-        teamMember: null, proposalSent: false, scheduledOnboarding: null
+        teamMember: null, proposalSent: false, scheduledOnboarding: null, smsUnlocked: false
       });
 
       const goTo = (step) => {
@@ -2047,7 +2047,7 @@
                 onBack={() => resumeMode ? goTo(STEPS.DASHBOARD) : goTo(STEPS.TEAM)} />
             )}
             {currentStep === STEPS.COMPLETE && (
-              <CompletionScreen data={formData} onViewDashboard={() => goTo(STEPS.DASHBOARD)}
+              <CompletionScreen data={formData} setData={setFormData} onViewDashboard={() => goTo(STEPS.DASHBOARD)}
                 onNavigateToStep={(step) => { setResumeMode(true); goTo(step); }} />
             )}
             {currentStep === STEPS.DASHBOARD && (
